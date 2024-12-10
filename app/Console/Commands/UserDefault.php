@@ -29,6 +29,7 @@ class UserDefault extends Command
         $user->name = 'Admin';
         $user->email = 'admin@cinema.next.ec';
         $user->password = 'cinema_admin';
+        $user->role = 'admin';
         $user->save();
     }
 }
