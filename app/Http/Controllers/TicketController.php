@@ -72,7 +72,6 @@ class TicketController extends Controller
                 'seat_number' => implode(', ', $validated['seat_numbers']),  // Listar todos los asientos comprados en un solo campo
                 'status' => 'ocupado',  // Asegurarnos de que el estado sea "ocupado"
                 'ticket_code' => $ticketCode, // Usar el mismo código para todos los boletos
-                'user_id' => auth()->id(), // Asociar con el usuario autenticado
             ]);
 
             // Confirmar la transacción
