@@ -13,14 +13,14 @@ class TicketController extends Controller
     // Listar todos los boletos
     public function index()
     {
-        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room', 'user'])->get(); // Incluye la función y la sala
+        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room'])->get(); // Incluye la función y la sala
         return response()->json($tickets);
     }
 
     // Mostrar un boleto específico
     public function show($id)
     {
-        $ticket = Ticket::with(['movieFunction.movie', 'movieFunction.room', 'user'])->find($id);
+        $ticket = Ticket::with('movieFunction')->find($id);
 
         if (!$ticket) {
             return response()->json(['message' => 'Ticket no encontrado'], 404);
