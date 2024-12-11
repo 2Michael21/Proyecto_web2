@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 // Rutas públicas
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [RegisterController::class, 'register']);
+
+// El admin puede ver los usuarios que se han registrado
 Route::prefix('user')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/', [RegisterController::class, 'index']);  // Obtener todos los usuarios
     Route::get('/{user}', [RegisterController::class, 'show']);
@@ -21,6 +23,12 @@ Route::prefix('user')->middleware(['auth:sanctum', 'role:admin'])->group(functio
 
 // Ruta protegida para cerrar sesión
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// El usuario puede ver los generos con un filtro
+Route::prefix('genres')->middleware(['auth:sanctum', 'role:user'])->group(function () {    
+    Route::get('/', [GenreController::class, 'index']);
+    Route::get('/{genre}', [GenreController::class, 'show']);  
+});
 
 // Rutas protegidas por autenticación y rol de admin
 Route::prefix('genres')->middleware(['auth:sanctum', 'role:admin'])->group(function () {    
@@ -38,7 +46,8 @@ Route::prefix('movies')->group(function () {
 
 // Ruta para poder ver las peliculas por id
 Route::prefix('movies')->middleware(['auth:sanctum', 'role:admin|user'])->group(function () {
-       Route::get('/{movie}', [MovieController::class, 'show']);
+        Route::get('/', [MovieController::class, 'index']);
+        Route::get('/{movie}', [MovieController::class, 'show']);
 });
 
 // Rutas protegidas por autenticación y rol de admin
