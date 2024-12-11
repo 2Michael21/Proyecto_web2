@@ -69,15 +69,13 @@ Route::prefix('rooms')->middleware(['auth:sanctum', 'role:admin'])->group(functi
 
 // Ruta para poder dejar al cliente ver las funciones
 
-Route::prefix('movie-functions')->middleware(['auth:sanctum', 'role:user'])->group(function () {
+Route::prefix('movie-functions')->middleware(['auth:sanctum', 'role:admin|user'])->group(function () {
     Route::get('/', [MovieFunctionController::class, 'index']);
     Route::get('/{movie_function}', [MovieFunctionController::class, 'show']);
 });
 // Rutas para Movie Functions protegidas por autenticación y rol de admin
 Route::prefix('movie-functions')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/', [MovieFunctionController::class, 'store']);
-    Route::get('/', [MovieFunctionController::class, 'index']);
-    Route::get('/{movie_function}', [MovieFunctionController::class, 'show']);
     Route::put('/{movie_function}', [MovieFunctionController::class, 'update']);
     Route::delete('/{movie_function}', [MovieFunctionController::class, 'destroy']);
 });
