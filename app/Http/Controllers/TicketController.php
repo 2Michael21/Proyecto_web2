@@ -13,14 +13,14 @@ class TicketController extends Controller
     // Listar todos los boletos
     public function index()
     {
-        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room'])->get(); // Incluye la función y la sala
+        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room', 'user'])->get(); // Incluye la función y la sala
         return response()->json($tickets);
     }
 
     // Mostrar un boleto específico
     public function show($id)
     {
-        $ticket = Ticket::with('movieFunction')->find($id);
+        $ticket = Ticket::with(['movieFunction.movie', 'movieFunction.room', 'user'])->find($id);
 
         if (!$ticket) {
             return response()->json(['message' => 'Ticket no encontrado'], 404);
@@ -72,6 +72,7 @@ class TicketController extends Controller
                 'seat_number' => implode(', ', $validated['seat_numbers']),  // Listar todos los asientos comprados en un solo campo
                 'status' => 'ocupado',  // Asegurarnos de que el estado sea "ocupado"
                 'ticket_code' => $ticketCode, // Usar el mismo código para todos los boletos
+                'user_id' => auth()->id(), // Asociar con el usuario autenticado
             ]);
 
             // Confirmar la transacción
