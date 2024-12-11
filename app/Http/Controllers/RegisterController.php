@@ -32,4 +32,34 @@ class RegisterController extends Controller
 
         return response()->json($user);
     }
+
+    // ve un usuario por id
+
+    public function show($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'Genero no encontrado'], 404);
+        }
+
+        return response()->json($user);
+    }
+
+    /**
+     * Elimina un usuario.
+     */
+
+    public function destroy($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'Usuario eliminado con exito']);
+    }
 }

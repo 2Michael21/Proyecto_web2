@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\GenreController;
@@ -12,21 +13,19 @@ use Illuminate\Support\Facades\Route;
 // Rutas públicas
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [RegisterController::class, 'register']);
-Route::prefix('users')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::prefix('user')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/', [RegisterController::class, 'index']);  // Obtener todos los usuarios
+    Route::get('/{user}', [RegisterController::class, 'show']);
+    Route::delete('/{user}', [RegisterController::class, 'destroy']);
 });
 
 // Ruta protegida para cerrar sesión
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-// Rutas públicas de géneros
-Route::prefix('genres')->group(function () {
+// Rutas protegidas por autenticación y rol de admin
+Route::prefix('genres')->middleware(['auth:sanctum', 'role:admin'])->group(function () {    
     Route::get('/', [GenreController::class, 'index']);
     Route::get('/{genre}', [GenreController::class, 'show']);
-});
-
-// Rutas protegidas por autenticación y rol de admin
-Route::prefix('genres')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/', [GenreController::class, 'store']);
     Route::put('/{genre}', [GenreController::class, 'update']);
     Route::delete('/{genre}', [GenreController::class, 'destroy']);
@@ -38,7 +37,7 @@ Route::prefix('movies')->group(function () {
 });
 
 // Ruta para poder ver las peliculas por id
-Route::prefix('movies')->middleware(['auth:sanctum', 'role:user'])->group(function () {
+Route::prefix('movies')->middleware(['auth:sanctum', 'role:admin|user'])->group(function () {
        Route::get('/{movie}', [MovieController::class, 'show']);
 });
 
@@ -68,11 +67,30 @@ Route::prefix('movie-functions')->middleware(['auth:sanctum', 'role:admin'])->gr
     Route::delete('/{movie_function}', [MovieFunctionController::class, 'destroy']);
 });
 
+
+Route::prefix('tickets')->middleware(['auth:sanctum', 'role:user'])->group(function () {
+    Route::post('/', [TicketController::class, 'store']);
+});
+
+// Ruta para obtener ticket por código
+Route::prefix('tickets')->middleware(['auth:sanctum', 'role:empleado'])->group(function () {
+    Route::get('/codigo/{ticketCode}', [TicketController::class, 'showByCode']);
+});
+
+
 // Rutas para Tickets protegidas por autenticación y rol de admin
 Route::prefix('tickets')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::post('/', [TicketController::class, 'store']);
     Route::get('/', [TicketController::class, 'index']);
-    Route::get('/{ticket}', [TicketController::class, 'show']);
-    Route::put('/{ticket}', [TicketController::class, 'update']);
     Route::delete('/{ticket}', [TicketController::class, 'destroy']);
 });
+
+
+// Rutas protegidas para AccountController, solo accesibles por administradores
+Route::prefix('accounts')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/', [AccountController::class, 'index']);
+    Route::post('/', [AccountController::class, 'store']);
+    Route::get('/{accounts}', [AccountController::class, 'show']);
+    Route::put('/{accounts}', [AccountController::class, 'update']);
+    Route::delete('/{accounts}', [AccountController::class, 'destroy']);
+});
+

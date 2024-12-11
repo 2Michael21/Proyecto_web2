@@ -31,7 +31,7 @@ class RoomController extends Controller
       {
           $validated = $request->validate([
               'name' => 'required|string|max:50|unique:rooms',
-              'capacity' => 'required|integer|min:1',
+              'capacity' => 'required|integer|min:1|max:30',
           ],
           [
               'name.unique' => 'El nombre ya está en uso',
@@ -40,6 +40,7 @@ class RoomController extends Controller
               'capacity.required' => 'Escribe la capacidad',
               'capacity.integer' => 'La capacidad debe ser un número',
               'capacity.min' => 'La capacidad debe ser mayor a 0',
+              'capacity.max' => 'La capacidad no debe ser mayor a 30',
           ]);
 
           $room = Room::create($validated);
@@ -58,7 +59,7 @@ class RoomController extends Controller
 
           $validated = $request->validate([
               'name' => 'required|string|max:50|unique:rooms,name,' . $id,
-              'capacity' => 'required|integer|min:1',
+              'capacity' => 'required|integer|min:1|max:30',
           ],
           [
               'name.unique' => 'El nombre ya está en uso',
@@ -67,6 +68,7 @@ class RoomController extends Controller
               'capacity.required' => 'Escribe la capacidad',
               'capacity.integer' => 'La capacidad debe ser un número',
               'capacity.min' => 'La capacidad debe ser mayor a 0',
+              'capacity.max' => 'La capacidad no debe ser mayor a 30',
           ]);
 
           $room->update($validated);
