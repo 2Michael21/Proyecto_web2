@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('ticket_code', 8)->unique();
             $table->enum('status', ['ocupado', 'libre'])->default('ocupado'); // Para marcar si el asiento está ocupado o libre
             $table->timestamp('purchased_at')->useCurrent();
+            $table->string('seat_number');
             $table->timestamps();
         });
     }
