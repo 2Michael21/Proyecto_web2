@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\MovieFunction;
+use App\Models\Room;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -51,13 +52,13 @@ class TicketController extends Controller
             return response()->json(['message' => 'Función de película no encontrada'], 404);
         }
 
-        // Verificar si algún asiento ya está ocupado
-        foreach ($validated['seat_numbers'] as $seatNumber) {
-            $existingTicket = Ticket::where('movie_function_id', $validated['movie_function_id'])
-                ->where('seat_number', $seatNumber)
-                ->first();
+        // Obtener la sala
+        $room = $movieFunction->room;
 
-            if ($existingTicket && $existingTicket->status == 'ocupado') {
+        // Verificar si algún asiento ya está ocupado en la sala
+        foreach ($validated['seat_numbers'] as $seatNumber) {
+            // Verificar si el asiento está disponible en la sala
+            if (isset($room->seats[$seatNumber]) && $room->seats[$seatNumber] === true) {
                 return response()->json(['message' => 'El asiento ' . $seatNumber . ' ya está ocupado'], 422);
             }
         }
@@ -66,24 +67,37 @@ class TicketController extends Controller
         DB::beginTransaction();
 
         try {
-            // Crear un único ticket para todos los asientos
+            // Crear el ticket para todos los asientos
             $ticket = Ticket::create([
                 'movie_function_id' => $validated['movie_function_id'],
-                'seat_number' => implode(', ', $validated['seat_numbers']),  // Listar todos los asientos comprados en un solo campo
-                'status' => 'ocupado',  // Asegurarnos de que el estado sea "ocupado"
+                'seat_number' => implode(', ', $validated['seat_numbers']),  // Listar todos los asientos comprados
+                'status' => 'ocupado',  // Aseguramos que el estado sea "ocupado"
                 'ticket_code' => $ticketCode, // Usar el mismo código para todos los boletos
             ]);
+
+            // Actualizar los asientos de la sala como ocupados
+// Verificar si 'seats' ya es un array, y si lo es, omitir json_decode
+            $seats = is_array($room->seats) ? $room->seats : json_decode($room->seats, true);
+
+            foreach ($validated['seat_numbers'] as $seatNumber) {
+                if (isset($seats[$seatNumber])) {
+                    $seats[$seatNumber] = true;  // Marcar el asiento como ocupado
+                }
+            }
+
+            // Guardar los cambios nuevamente en el JSON
+            $room->seats = json_encode($seats);  // Volver a codificar el JSON
+            $room->save();
 
             // Confirmar la transacción
             DB::commit();
 
-            // Obtener la sala y la película asociada
-            $room = $movieFunction->room;
+            // Obtener la película asociada
             $movie = $movieFunction->movie;
 
-            // Devolver los detalles del ticket creado con la sala y la película
+            // Devolver los detalles del ticket con la sala y la película
             return response()->json([
-                'ticket_code' => $ticketCode,  // Devolver el código generado
+                'ticket_code' => $ticketCode,  // Código generado
                 'movie_title' => $movie->title, // Título de la película
                 'room_name' => $room->name,     // Nombre de la sala
                 'seat_numbers' => $validated['seat_numbers'], // Asientos comprados
@@ -91,9 +105,12 @@ class TicketController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            // En caso de error, revertir la transacción
+            // Log del error detallado
+            \Log::error($e->getMessage(), ['error' => $e]);
+
+            // Enviar un mensaje de error con el detalle
             DB::rollBack();
-            return response()->json(['message' => 'Hubo un error al crear el ticket'], 500);
+            return response()->json(['message' => 'Hubo un error al crear el ticket', 'error' => $e->getMessage()], 500);
         }
     }
 

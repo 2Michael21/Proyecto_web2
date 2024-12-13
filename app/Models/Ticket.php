@@ -9,11 +9,19 @@ class Ticket extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'movie_function_id',
-        'seat_number',
-        'ticket_code',  // Este campo debe existir en la base de datos
-        'status', // Si el status es necesario
+    // Asegúrate de que `seat_number` sea un array de números de asiento
+
+        protected $fillable = [
+            'movie_function_id',
+            'seat_number',  // Asegúrate de incluir esta columna
+            'status',
+            'ticket_code',
+        ];
+    
+
+    // Convertir seat_number a un array cuando se acceda
+    protected $casts = [
+        'seat_number' => 'array',  // Esto permite que seat_number sea tratado como un array
     ];
 
     // Relación con MovieFunction

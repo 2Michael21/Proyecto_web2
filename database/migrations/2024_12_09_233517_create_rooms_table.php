@@ -4,26 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateRoomsTable extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 50);
-            $table->integer('capacity');
+            $table->string('name'); // Nombre de la sala
+            $table->integer('total_seats'); // Número total de asientos
+            $table->json('seats')->nullable(); // JSON para los asientos
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('rooms');
     }
-};
+}
+

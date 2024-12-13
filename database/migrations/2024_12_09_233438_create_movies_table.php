@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->date('release_date')->nullable();
             $table->integer('duration')->comment('Duración en minutos');
+            $table->string('external_id')->unique();  // Agregar campo external_id
             $table->timestamps();
         });
     }

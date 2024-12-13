@@ -2,9 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
-    protected $fillable = ['name', 'capacity'];
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'total_seats',
+        'seats',
+    ];
+
+    // Aseguramos que la columna seats sea tratada como un array
+    protected $casts = [
+        'seats' => 'array',
+    ];
 }

@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('movie_function_id')->constrained()->onDelete('cascade');
-            $table->string('seat_number', 10);
             $table->string('ticket_code', 8)->unique();
             $table->enum('status', ['ocupado', 'libre'])->default('ocupado'); // Para marcar si el asiento está ocupado o libre
             $table->timestamp('purchased_at')->useCurrent();

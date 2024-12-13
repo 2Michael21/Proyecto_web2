@@ -20,7 +20,7 @@ class MovieFunctionController extends Controller
         $function = MovieFunction::with(['movie', 'room'])->find($id);
 
         if (!$function) {
-            return response()->json(['message' => 'Funcion de la pelicula no encontrada'], 404);
+            return response()->json(['message' => 'Funcion de la película no encontrada'], 404);
         }
 
         return response()->json($function);
@@ -30,12 +30,13 @@ class MovieFunctionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'movie_id' => 'required|exists:movies,id',
-            'room_id' => 'required|exists:rooms,id',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+            'movie_id' => 'required|exists:movies,id',  // Usar el ID de la película guardada
+            'room_id' => 'required|exists:rooms,id',    // Sala donde se proyectará la película
+            'start_time' => 'required|date',             // Hora de inicio de la función
+            'end_time' => 'required|date|after:start_time', // Hora de finalización
         ]);
 
+        // Crear la nueva función de la película en la sala
         $function = MovieFunction::create($validated);
 
         return response()->json($function->load(['movie', 'room']), 201);
@@ -47,7 +48,7 @@ class MovieFunctionController extends Controller
         $function = MovieFunction::find($id);
 
         if (!$function) {
-            return response()->json(['message' => 'Funcion de la pelicula no encontrada'], 404);
+            return response()->json(['message' => 'Funcion de la película no encontrada'], 404);
         }
 
         $validated = $request->validate([
@@ -68,11 +69,11 @@ class MovieFunctionController extends Controller
         $function = MovieFunction::find($id);
 
         if (!$function) {
-            return response()->json(['message' => 'Funcion de la pelicula no encontrada'], 404);
+            return response()->json(['message' => 'Funcion de la película no encontrada'], 404);
         }
 
         $function->delete();
 
-        return response()->json(['message' => 'Funcion de la pelicula eliminada']);
+        return response()->json(['message' => 'Funcion de la película eliminada']);
     }
 }
