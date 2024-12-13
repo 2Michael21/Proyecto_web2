@@ -61,6 +61,7 @@ Route::prefix('movie-functions')->group(function () {
     });
 });
 
+
 Route::prefix('tickets')->group(function () {
 
     // Rutas para clientes (usuarios)
