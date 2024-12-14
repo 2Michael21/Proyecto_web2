@@ -11,7 +11,7 @@ class Movie extends Model
 
     // Definir los campos que pueden ser asignados masivamente
     protected $fillable = [
-        'title', 'description', 'release_date', 'duration', 'external_id'
+        'title', 'description', 'release_date', 'duration', 'external_id', 'image_path', 'is_new_movie',
     ];
     
 }

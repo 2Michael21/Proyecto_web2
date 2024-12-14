@@ -47,6 +47,7 @@ Route::prefix('rooms')->middleware(['auth:sanctum', 'role:admin'])->group(functi
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/movies/store-from-api/{movieExternalId}', [MovieController::class, 'storeMovieFromAPI']);  // Guardar película desde la API
 });
+// Ruta para obtener solo las películas nuevas
 
 // Rutas protegidas para funciones de películas
 Route::prefix('movie-functions')->group(function () {
