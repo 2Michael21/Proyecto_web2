@@ -31,7 +31,9 @@ Route::prefix('movies')->group(function () {
     Route::get('/search', [MovieController::class, 'searchMovies']);      // Buscar películas
 });
 
-
+Route::prefix('movies')->middleware(['auth:sanctum', 'role:user'])->group(function () {
+Route::get('/popular1', [MovieController::class, 'getPopularMovies1']); // Películas populares
+});
 // Rutas protegidas para salas (Rooms)
 Route::prefix('rooms')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/', [RoomController::class, 'store']);

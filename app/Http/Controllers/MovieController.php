@@ -41,6 +41,24 @@ class MovieController extends Controller
 
         return response()->json($movies);  // Devolver la respuesta como JSON
     }
+    public function getPopularMovies1()
+    {
+        // Petición HTTP a la API de The Movie DB
+        $response = Http::get("{$this->baseURL}/movie/popular1", [
+            'api_key' => $this->apiKey,
+            'language' => 'es-ES',  // Lenguaje de los resultados
+        ]);
+
+        $movies = $response->json();  // Obtener la respuesta en formato JSON
+
+        // Agregar URLs completas de imágenes
+        foreach ($movies['results'] as &$movie) {
+            $movie['poster_full_path'] = "{$this->imageBaseURL}/w500" . $movie['poster_path'];
+            $movie['backdrop_full_path'] = "{$this->imageBaseURL}/w780" . $movie['backdrop_path'];
+        }
+
+        return response()->json($movies);  // Devolver la respuesta como JSON
+    }
 
     /**
      * Obtener detalles de una película por su ID

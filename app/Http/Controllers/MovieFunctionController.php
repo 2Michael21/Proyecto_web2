@@ -51,12 +51,24 @@ class MovieFunctionController extends Controller
             return response()->json(['message' => 'Funcion de la película no encontrada'], 404);
         }
 
-        $validated = $request->validate([
-            'movie_id' => 'required|exists:movies,id',
-            'room_id' => 'required|exists:rooms,id',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
-        ]);
+$validated = $request->validate([
+    'movie_id' => 'required|exists:movies,id',
+    'room_id' => 'required|exists:rooms,id',
+    'start_time' => 'required|date|after:now',
+    'end_time' => 'required|date|after:start_time',
+]);
+
+// Validar solapamiento
+$overlap = MovieFunction::where('room_id', $validated['room_id'])
+    ->where(function ($query) use ($validated) {
+        $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
+              ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']]);
+    })
+    ->exists();
+
+if ($overlap) {
+    return response()->json(['message' => 'El horario de la función se solapa con otra función.'], 400);
+}
 
         $function->update($validated);
 

@@ -17,4 +17,5 @@ class MovieFunction extends Model
     {
         return $this->belongsTo(Room::class);
     }
+
 }
