@@ -90,6 +90,9 @@ class MovieController extends Controller
     /**
      * Almacenar película desde la API
      */
+ /**
+     * Almacenar película desde la API y la imagen
+     */
     public function storeMovieFromAPI($movieExternalId)
     {
         try {
@@ -98,14 +101,14 @@ class MovieController extends Controller
                 'api_key' => $this->apiKey,
                 'language' => 'es-ES',
             ]);
-    
+
             $movie = $response->json();
-    
+
             // Verificar si la película ya existe por external_id
             $existingMovie = Movie::where('external_id', $movie['id'])->first();
-    
+
             if (!$existingMovie) {
-                // Crear la película si no existe
+                // Crear la película en la base de datos
                 $newMovie = Movie::create([
                     'title' => $movie['title'],
                     'description' => $movie['overview'],
@@ -113,7 +116,23 @@ class MovieController extends Controller
                     'duration' => $movie['runtime'],
                     'external_id' => $movie['id'],  // Guardar el external_id
                 ]);
-                
+
+                // Si hay imagen de póster, descargarla y almacenarla
+                if (isset($movie['poster_path'])) {
+                    $posterUrl = "{$this->imageBaseURL}/w500" . $movie['poster_path'];
+                    $imageContents = file_get_contents($posterUrl);  // Descargar la imagen
+
+                    // Generar un nombre único para la imagen
+                    $imageName = Str::random(10) . '.jpg'; 
+
+                    // Guardar la imagen en el almacenamiento público
+                    Storage::disk('public')->put('movies/' . $imageName, $imageContents);
+
+                    // Almacenar la ruta de la imagen en la base de datos
+                    $newMovie->poster_path = 'movies/' . $imageName;
+                    $newMovie->save();
+                }
+
                 return response()->json($newMovie, 201);
             } else {
                 return response()->json(['message' => 'Película ya existe'], 400);
@@ -124,5 +143,4 @@ class MovieController extends Controller
             return response()->json(['message' => 'Error al guardar la película'], 500);
         }
     }
-    
 }
