@@ -50,7 +50,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
 // Rutas protegidas para funciones de películas
 Route::prefix('movie-functions')->group(function () {
-    Route::middleware(['auth:sanctum', 'role:admin|user'])->group(function () {
+    Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
         Route::get('/', [MovieFunctionController::class, 'index']);  // Ver funciones
         Route::get('/{movie_function}', [MovieFunctionController::class, 'show']);
     });
