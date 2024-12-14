@@ -69,10 +69,11 @@ class TicketController extends Controller
         try {
             // Crear el ticket para todos los asientos
             $ticket = Ticket::create([
+                'user_id' => auth()->id(),  // Asociar el ticket con el usuario actual
                 'movie_function_id' => $validated['movie_function_id'],
-                'seat_number' => implode(', ', $validated['seat_numbers']),  // Listar todos los asientos comprados
-                'status' => 'ocupado',  // Aseguramos que el estado sea "ocupado"
-                'ticket_code' => $ticketCode, // Usar el mismo código para todos los boletos
+                'seat_number' => implode(', ', $validated['seat_numbers']),
+                'status' => 'ocupado',
+                'ticket_code' => $ticketCode,
             ]);
 
             // Actualizar los asientos de la sala como ocupados
@@ -169,17 +170,34 @@ class TicketController extends Controller
 
     // Eliminar un boleto
     public function destroy($id)
-    {
-        $ticket = Ticket::find($id);
+{
+    $ticket = Ticket::find($id);
 
-        if (!$ticket) {
-            return response()->json(['message' => 'Ticket no encontrado'], 404);
+    if (!$ticket) {
+        return response()->json(['message' => 'Ticket no encontrado'], 404);
+    }
+
+    // Obtener la función de la película asociada al ticket
+    $movieFunction = $ticket->movieFunction;
+
+    if ($movieFunction) {
+        // Actualizar los asientos de la función
+        $seats = json_decode($movieFunction->room->seats, true); // Convertir a array
+        foreach ($ticket->seats as $seatNumber) {
+            if (isset($seats[$seatNumber])) {
+                $seats[$seatNumber] = false; // Marcar como disponible
+            }
         }
 
-        $ticket->delete();
-
-        return response()->json(['message' => 'Ticket eliminado']);
+        // Guardar los cambios en los asientos
+        $movieFunction->room->seats = json_encode($seats);
+        $movieFunction->room->save();
     }
+
+    $ticket->delete();
+
+    return response()->json(['message' => 'Ticket eliminado y asientos liberados correctamente'], 200);
+}
 
     // Liberar los asientos de una función de película (cuando la película termine)
     public function liberarAsientos($movieFunctionId)
