@@ -33,7 +33,6 @@ class TicketController extends Controller
         return response()->json($ticket);
     }
 
-    // Crear uno o varios boletos (cuando el cliente compra uno o más asientos)
     public function store(Request $request)
     {
         // Validar los datos recibidos
@@ -42,19 +41,19 @@ class TicketController extends Controller
             'seat_numbers' => 'required|array', // Una lista de números de asientos
             'seat_numbers.*' => 'required|string|max:10', // Validar cada asiento individualmente
         ]);
-
+    
         // Generar un único código de ticket para todos los asientos
         $ticketCode = Str::random(8);
-
+    
         // Obtener la función de la película y la sala
         $movieFunction = MovieFunction::with('room')->find($validated['movie_function_id']);
         if (!$movieFunction) {
             return response()->json(['message' => 'Función de película no encontrada'], 404);
         }
-
+    
         // Obtener la sala
         $room = $movieFunction->room;
-
+    
         // Verificar si algún asiento ya está ocupado en la sala
         foreach ($validated['seat_numbers'] as $seatNumber) {
             // Verificar si el asiento está disponible en la sala
@@ -62,10 +61,10 @@ class TicketController extends Controller
                 return response()->json(['message' => 'El asiento ' . $seatNumber . ' ya está ocupado'], 422);
             }
         }
-
+    
         // Iniciar una transacción para asegurar la consistencia de la base de datos
         DB::beginTransaction();
-
+    
         try {
             // Crear el ticket para todos los asientos
             $ticket = Ticket::create([
@@ -75,27 +74,22 @@ class TicketController extends Controller
                 'status' => 'ocupado',
                 'ticket_code' => $ticketCode,
             ]);
-
+    
             // Actualizar los asientos de la sala como ocupados
-// Verificar si 'seats' ya es un array, y si lo es, omitir json_decode
-            $seats = is_array($room->seats) ? $room->seats : json_decode($room->seats, true);
-
             foreach ($validated['seat_numbers'] as $seatNumber) {
-                if (isset($seats[$seatNumber])) {
-                    $seats[$seatNumber] = true;  // Marcar el asiento como ocupado
-                }
+                // Verificar si 'seats' ya es un array, y si lo es, omitir json_decode
+                $room->seats[$seatNumber] = true;  // Marcar el asiento como ocupado
             }
-
-            // Guardar los cambios nuevamente en el JSON
-            $room->seats = json_encode($seats);  // Volver a codificar el JSON
+    
+            // Guardar los cambios en los asientos de la sala
             $room->save();
-
+    
             // Confirmar la transacción
             DB::commit();
-
+    
             // Obtener la película asociada
             $movie = $movieFunction->movie;
-
+    
             // Devolver los detalles del ticket con la sala y la película
             return response()->json([
                 'ticket_code' => $ticketCode,  // Código generado
@@ -104,16 +98,17 @@ class TicketController extends Controller
                 'seat_numbers' => $validated['seat_numbers'], // Asientos comprados
                 'message' => 'Ticket creado correctamente para los asientos: ' . implode(', ', $validated['seat_numbers']),
             ], 201);
-
+    
         } catch (\Exception $e) {
             // Log del error detallado
             \Log::error($e->getMessage(), ['error' => $e]);
-
+    
             // Enviar un mensaje de error con el detalle
             DB::rollBack();
             return response()->json(['message' => 'Hubo un error al crear el ticket', 'error' => $e->getMessage()], 500);
         }
     }
+    
 
     // Buscar un boleto por código
     public function showByCode($ticketCode)
@@ -171,14 +166,31 @@ class TicketController extends Controller
     public function destroy($id)
     {
         try {
-            // Encuentra el ticket por ID
-            $ticket = Ticket::find($id);
-    
-            if (!$ticket) {
-                return response()->json(['message' => 'Ticket no encontrado'], 404);
+                // Obtener el ticket
+        $ticket = Ticket::find($ticketId);
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket no encontrado'], 404);
+        }
+
+        // Obtener los asientos ocupados
+        $occupiedSeats = json_decode($ticket->seats, true);
+
+        // Obtener la sala correspondiente
+        $room = $ticket->movieFunction->room; // Suponiendo que cada ticket tiene una relación con MovieFunction y la sala
+
+        // Obtener los asientos de la sala
+        $seats = json_decode($room->seats, true);
+
+        // Restablecer los asientos a 'false' para los asientos ocupados
+        foreach ($occupiedSeats as $seat => $occupied) {
+            if (isset($seats[$seat]) && $occupied) {
+                $seats[$seat] = false; // Desmarcar el asiento como desocupado
             }
-    
-            // Elimina el ticket
+        }
+
+        // Guardar los cambios en los asientos de la sala
+        $room->seats = json_encode($seats);
+        $room->save();
             $ticket->delete();
     
             return response()->json(['message' => 'Ticket eliminado correctamente'], 200);
