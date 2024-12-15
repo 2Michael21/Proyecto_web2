@@ -179,11 +179,18 @@ public function destroy($ticketId)
         $movieFunction = $ticket->movieFunction; // O como tengas relacionado el ticket con la función de película
         $room = $movieFunction->room; // Asumiendo que la sala está relacionada con la función
 
-        // Obtener los asientos ocupados en el ticket
-        $occupiedSeats = $ticket->seat_numbers; // O como tengas relacionado los asientos en el ticket
+        // Verificar si 'seat_numbers' no es null ni vacío
+        $occupiedSeats = $ticket->seat_numbers;
+        if (!$occupiedSeats || !is_array($occupiedSeats)) {
+            return response()->json(['error' => 'No se encontraron asientos ocupados en el ticket.'], 400);
+        }
 
-        // Decodificar los asientos de la sala
-        $seats = json_decode($room->seats, true);
+        // Verificar si 'seats' tiene datos válidos
+        if ($room->seats) {
+            $seats = json_decode($room->seats, true);  // Decodificar JSON a array
+        } else {
+            return response()->json(['error' => 'No se encontraron datos de asientos en la sala.'], 400);
+        }
 
         // Marcar los asientos como libres
         foreach ($occupiedSeats as $seatNumber) {
