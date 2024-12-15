@@ -171,34 +171,45 @@ class TicketController extends Controller
     // Eliminar un boleto
     public function destroy($id)
 {
+    // Encuentra el ticket por ID
     $ticket = Ticket::find($id);
 
     if (!$ticket) {
         return response()->json(['message' => 'Ticket no encontrado'], 404);
     }
 
-    // Obtener la función de la película asociada al ticket
-    $movieFunction = $ticket->movieFunction;
+    // Obtén la función asociada al ticket
+    $function = $ticket->function;
 
-    if ($movieFunction) {
-        // Actualizar los asientos de la función
-        $seats = json_decode($movieFunction->room->seats, true); // Convertir a array
-        foreach ($ticket->seats as $seatNumber) {
-            if (isset($seats[$seatNumber])) {
-                $seats[$seatNumber] = false; // Marcar como disponible
-            }
-        }
-
-        // Guardar los cambios en los asientos
-        $movieFunction->room->seats = json_encode($seats);
-        $movieFunction->room->save();
+    if (!$function) {
+        return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
     }
 
+    // Decodifica los asientos de la función
+    $seats = json_decode($function->seats, true);
+
+    if (!$seats) {
+        return response()->json(['message' => 'Los asientos de la función no están configurados correctamente'], 500);
+    }
+
+    // Cambia el estado de los asientos del ticket a `false`
+    foreach ($ticket->seats as $seat) {
+        if (isset($seats[$seat])) {
+            $seats[$seat] = false;
+        }
+    }
+
+    // Guarda los cambios en la función
+    $function->seats = json_encode($seats);
+    $function->save();
+
+    // Elimina el ticket
     $ticket->delete();
 
-    return response()->json(['message' => 'Ticket eliminado y asientos liberados correctamente'], 200);
+    return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
 }
 
+    
     // Liberar los asientos de una función de película (cuando la película termine)
     public function liberarAsientos($movieFunctionId)
     {
