@@ -18,17 +18,6 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    // Ver todos los boletos (para admin)
-    public function adminIndex()
-    {
-        // Solo los administradores pueden acceder a esta función
-        if (!auth()->user() || !auth()->user()->is_admin) {
-            return response()->json(['message' => 'No tienes permiso para acceder a esta función'], 403);
-        }
-
-        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room'])->get(); // Incluye la función y la sala
-        return response()->json($tickets);
-    }
 
     public function showUserTickets()
     {

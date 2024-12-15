@@ -78,7 +78,7 @@ Route::prefix('tickets')->group(function () {
 
     // Rutas para administradores
     Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-        Route::get('/', [TicketController::class, 'adminIndex']);  // Administrar tickets (listado)
+        Route::get('/', [TicketController::class, 'index']);  // Administrar tickets (listado)
         Route::delete('/{ticketId}', [TicketController::class, 'destroy']);  // Eliminar ticket por ID
     });
 
