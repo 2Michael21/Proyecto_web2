@@ -168,46 +168,49 @@ class TicketController extends Controller
         return response()->json($ticket->load(['movieFunction.movie', 'movieFunction.room']));
     }
 
-    // Eliminar un boleto
     public function destroy($id)
-{
-    // Encuentra el ticket por ID
-    $ticket = Ticket::find($id);
-
-    if (!$ticket) {
-        return response()->json(['message' => 'Ticket no encontrado'], 404);
-    }
-
-    // Obtén la función asociada al ticket
-    $function = $ticket->function;
-
-    if (!$function) {
-        return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
-    }
-
-    // Decodifica los asientos de la función
-    $seats = json_decode($function->seats, true);
-
-    if (!$seats) {
-        return response()->json(['message' => 'Los asientos de la función no están configurados correctamente'], 500);
-    }
-
-    // Cambia el estado de los asientos del ticket a `false`
-    foreach ($ticket->seats as $seat) {
-        if (isset($seats[$seat])) {
-            $seats[$seat] = false;
+    {
+        // Encuentra el ticket por ID
+        $ticket = Ticket::find($id);
+    
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket no encontrado'], 404);
         }
+    
+        // Depurar para ver si el ticket tiene una relación con la función
+        dd($ticket->function);
+    
+        // Obtén la función asociada al ticket
+        $function = $ticket->function;
+    
+        if (!$function) {
+            return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
+        }
+    
+        // Decodifica los asientos de la función
+        $seats = json_decode($function->seats, true);
+    
+        if (!$seats) {
+            return response()->json(['message' => 'Los asientos de la función no están configurados correctamente'], 500);
+        }
+    
+        // Cambia el estado de los asientos del ticket a `false`
+        foreach ($ticket->seats as $seat) {
+            if (isset($seats[$seat])) {
+                $seats[$seat] = false;
+            }
+        }
+    
+        // Guarda los cambios en la función
+        $function->seats = json_encode($seats);
+        $function->save();
+    
+        // Elimina el ticket
+        $ticket->delete();
+    
+        return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
     }
-
-    // Guarda los cambios en la función
-    $function->seats = json_encode($seats);
-    $function->save();
-
-    // Elimina el ticket
-    $ticket->delete();
-
-    return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
-}
+    
 
     
     // Liberar los asientos de una función de película (cuando la película termine)
