@@ -18,25 +18,6 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    public function getUserTickets(Request $request)
-    {
-        $userId = auth()->id(); 
-
-        if (!$userId) {
-            return response()->json(['error' => 'Usuario no autenticado'], 401);
-        }
-
-        try {
-            $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room'])
-                ->where('user_id', $userId)
-                ->get();
-
-            return response()->json($tickets);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al obtener los tickets: ' . $e->getMessage()], 500);
-        }
-    }
-
     // Mostrar un boleto específico
     public function show($id)
     {
