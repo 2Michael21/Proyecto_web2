@@ -79,6 +79,19 @@ class MovieFunctionController extends Controller
             'end_time' => 'required|date|after:start_time', // Hora de finalización
         ]);
 
+            // Obtener la sala donde se proyectará la película
+        $room = Room::find($validated['room_id']);
+        if (!$room) {
+            return response()->json(['message' => 'Sala no encontrada'], 404);
+        }
+
+        // Verificar que los asientos están bien configurados
+        $seats = json_decode($room->seats, true);
+        if (!$seats) {
+            return response()->json(['message' => 'Los asientos no están configurados correctamente'], 400);
+        }
+
+
         // Crear la nueva función de la película en la sala
         $function = MovieFunction::create($validated);
 

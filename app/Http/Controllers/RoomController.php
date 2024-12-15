@@ -48,11 +48,13 @@ class RoomController extends Controller
         $seats = $this->generateSeats();
 
         // Crear la sala
+// Crear la sala con los asientos inicializados
         $room = Room::create([
             'name' => $validated['name'],
             'total_seats' => count($seats),
-            'seats' => $seats,
+            'seats' => json_encode($seats), // Guarda los asientos en formato JSON
         ]);
+
 
         return response()->json(['message' => 'Sala creada con éxito', 'room' => $room], 201);
     }
