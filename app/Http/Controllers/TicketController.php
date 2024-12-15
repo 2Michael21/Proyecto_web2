@@ -18,17 +18,6 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    // Obtener los boletos del usuario autenticado
-    public function ticketusuario()
-    {
-        $userId = auth()->id(); // Obtener el ID del usuario autenticado
-        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room'])
-                         ->where('user_id', $userId) // Filtrar por el ID del usuario
-                         ->get();
-
-        return response()->json($tickets);
-    }
-
     // Mostrar un boleto específico
     public function show($id)
     {
@@ -44,7 +33,7 @@ class TicketController extends Controller
         return response()->json($ticket);
     }
 
-    // Crear un ticket
+    // Crear uno o varios boletos (cuando el cliente compra uno o más asientos)
     public function store(Request $request)
     {
         // Validar los datos recibidos
@@ -54,7 +43,7 @@ class TicketController extends Controller
             'seat_numbers.*' => 'required|string|max:10', // Validar cada asiento individualmente
         ]);
 
-        // Generar un código único de ticket para todos los asientos
+        // Generar un único código de ticket para todos los asientos
         $ticketCode = Str::random(8);
 
         // Obtener la función de la película y la sala
@@ -68,6 +57,7 @@ class TicketController extends Controller
 
         // Verificar si algún asiento ya está ocupado en la sala
         foreach ($validated['seat_numbers'] as $seatNumber) {
+            // Verificar si el asiento está disponible en la sala
             if (isset($room->seats[$seatNumber]) && $room->seats[$seatNumber] === true) {
                 return response()->json(['message' => 'El asiento ' . $seatNumber . ' ya está ocupado'], 422);
             }
@@ -87,6 +77,7 @@ class TicketController extends Controller
             ]);
 
             // Actualizar los asientos de la sala como ocupados
+// Verificar si 'seats' ya es un array, y si lo es, omitir json_decode
             $seats = is_array($room->seats) ? $room->seats : json_decode($room->seats, true);
 
             foreach ($validated['seat_numbers'] as $seatNumber) {
@@ -95,8 +86,8 @@ class TicketController extends Controller
                 }
             }
 
-            // Volver a guardar los cambios en el JSON de los asientos
-            $room->seats = json_encode($seats);
+            // Guardar los cambios nuevamente en el JSON
+            $room->seats = json_encode($seats);  // Volver a codificar el JSON
             $room->save();
 
             // Confirmar la transacción
@@ -107,10 +98,10 @@ class TicketController extends Controller
 
             // Devolver los detalles del ticket con la sala y la película
             return response()->json([
-                'ticket_code' => $ticketCode,
-                'movie_title' => $movie->title,
-                'room_name' => $room->name,
-                'seat_numbers' => $validated['seat_numbers'],
+                'ticket_code' => $ticketCode,  // Código generado
+                'movie_title' => $movie->title, // Título de la película
+                'room_name' => $room->name,     // Nombre de la sala
+                'seat_numbers' => $validated['seat_numbers'], // Asientos comprados
                 'message' => 'Ticket creado correctamente para los asientos: ' . implode(', ', $validated['seat_numbers']),
             ], 201);
 
@@ -133,9 +124,9 @@ class TicketController extends Controller
             return response()->json(['message' => 'Ticket con el código ' . $ticketCode . ' no encontrado'], 404);
         }
 
-        $movieFunction = $ticket->movieFunction;
-        $movie = $movieFunction->movie;
-        $room = $movieFunction->room;
+        $movieFunction = $ticket->movieFunction;  // Obtener la función de la película
+        $movie = $movieFunction->movie;  // Obtener la película
+        $room = $movieFunction->room;   // Obtener la sala
 
         // Obtener los números de los asientos
         $seatNumbers = explode(', ', $ticket->seat_number);
@@ -148,46 +139,82 @@ class TicketController extends Controller
         ]);
     }
 
-    // Eliminar un ticket y liberar los asientos
-    public function destroy($ticketId)
+    // Actualizar un boleto
+    public function update(Request $request, $id)
     {
-        try {
-            // Obtener el ticket a eliminar
-            $ticket = Ticket::findOrFail($ticketId);
+        $ticket = Ticket::find($id);
 
-            // Obtener la función de la película y la sala asociada
-            $movieFunction = $ticket->movieFunction;
-            $room = $movieFunction->room;
-
-            // Obtener los asientos ocupados
-            $occupiedSeats = explode(', ', $ticket->seat_number);
-            if (!$occupiedSeats || !is_array($occupiedSeats)) {
-                return response()->json(['error' => 'No se encontraron asientos ocupados en el ticket.'], 400);
-            }
-
-            // Decodificar los asientos de la sala
-            $seats = json_decode($room->seats, true);
-
-            // Marcar los asientos como libres (false)
-            foreach ($occupiedSeats as $seatNumber) {
-                if (isset($seats[$seatNumber])) {
-                    $seats[$seatNumber] = false;  // Marcar el asiento como libre
-                }
-            }
-
-            // Volver a codificar los asientos y guardar la actualización
-            $room->seats = json_encode($seats);
-            $room->save();
-
-            // Eliminar el ticket
-            $ticket->delete();
-
-            return response()->json(['message' => 'Ticket y asientos eliminados con éxito.']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al eliminar el ticket: ' . $e->getMessage()], 500);
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket no encontrado'], 404);
         }
+
+        $validated = $request->validate([
+            'movie_function_id' => 'required|exists:movie_functions,id',
+            'seat_number' => 'required|string|max:10',
+        ]);
+
+        // Verificar si el asiento ya está ocupado
+        $existingTicket = Ticket::where('movie_function_id', $validated['movie_function_id'])
+            ->where('seat_number', $validated['seat_number'])
+            ->where('id', '!=', $id) // Excluir el ticket actual
+            ->first();
+
+        if ($existingTicket && $existingTicket->status == 'ocupado') {
+            return response()->json(['message' => 'Puesto ya tomado'], 422);
+        }
+
+        $ticket->update($validated);
+
+        return response()->json($ticket->load(['movieFunction.movie', 'movieFunction.room']));
     }
 
+// Eliminar un ticket y liberar los asientos
+public function destroy($ticketId)
+{
+    try {
+        // Obtener el ticket a eliminar
+        $ticket = Ticket::findOrFail($ticketId);
+
+        // Obtener la función de la película y la sala asociada
+        $movieFunction = $ticket->movieFunction; // O como tengas relacionado el ticket con la función de película
+        $room = $movieFunction->room; // Asumiendo que la sala está relacionada con la función
+
+        // Verificar si 'seat_numbers' no es null ni vacío
+        $occupiedSeats = explode(', ', $ticket->seat_number); // Asumir que los números de asientos están en un string separado por coma
+        if (!$occupiedSeats || !is_array($occupiedSeats)) {
+            return response()->json(['error' => 'No se encontraron asientos ocupados en el ticket.'], 400);
+        }
+
+        // Verificar si 'seats' tiene datos válidos
+        if ($room->seats) {
+            $seats = json_decode($room->seats, true);  // Decodificar JSON a array
+        } else {
+            return response()->json(['error' => 'No se encontraron datos de asientos en la sala.'], 400);
+        }
+
+        // Marcar los asientos como libres (false)
+        foreach ($occupiedSeats as $seatNumber) {
+            if (isset($seats[$seatNumber])) {
+                $seats[$seatNumber] = false;  // Marcar el asiento como libre
+            }
+        }
+
+        // Volver a codificar los asientos y guardar la actualización
+        $room->seats = json_encode($seats);
+        $room->save();  // Guardar la sala con los asientos actualizados
+
+        // Eliminar el ticket
+        $ticket->delete();
+
+        return response()->json(['message' => 'Ticket y asientos eliminados con éxito.']);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error al eliminar el ticket: ' . $e->getMessage()], 500);
+    }
+}
+
+
+
+    
     // Liberar los asientos de una función de película (cuando la película termine)
     public function liberarAsientos($movieFunctionId)
     {
