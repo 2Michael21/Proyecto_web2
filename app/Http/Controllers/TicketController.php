@@ -22,19 +22,22 @@ class TicketController extends Controller
     public function getUserTickets(Request $request)
     {
         // Obtener el ID del usuario autenticado
-        $userId = Auth::id(); 
-
+        $userId = auth()->id(); 
+    
         // Verificar si el usuario está autenticado
         if (!$userId) {
             return response()->json(['error' => 'Usuario no autenticado'], 401);
         }
-
-        // Obtener los tickets del usuario autenticado
-        $tickets = Ticket::where('user_id', $userId)->get();
-
+    
+        // Obtener los tickets del usuario autenticado, incluyendo la película y la sala
+        $tickets = Ticket::with(['movieFunction.movie', 'movieFunction.room'])
+            ->where('user_id', $userId)
+            ->get();
+    
         // Retornar los tickets en formato JSON
         return response()->json($tickets);
     }
+    
     
 
     // Mostrar un boleto específico
@@ -205,10 +208,9 @@ public function destroy($ticketId)
         }
 
         // Verificar si 'seats' tiene datos válidos
-        if ($room->seats) {
-            $seats = json_decode($room->seats, true);  // Decodificar JSON a array
-        } else {
-            return response()->json(['error' => 'No se encontraron datos de asientos en la sala.'], 400);
+        $seats = json_decode($room->seats, true);  // Decodificar JSON a array
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['error' => 'Error al decodificar los asientos de la sala.'], 400);
         }
 
         // Marcar los asientos como libres (false)
@@ -230,6 +232,7 @@ public function destroy($ticketId)
         return response()->json(['error' => 'Error al eliminar el ticket: ' . $e->getMessage()], 500);
     }
 }
+
 
 
 
