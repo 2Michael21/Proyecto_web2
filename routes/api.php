@@ -85,6 +85,7 @@ Route::prefix('tickets')->group(function () {
 });
 
 
+
 // Rutas protegidas para Accounts
 Route::prefix('accounts')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/', [AccountController::class, 'index']);
