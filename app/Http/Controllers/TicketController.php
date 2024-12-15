@@ -170,55 +170,57 @@ class TicketController extends Controller
 
     public function destroy($id)
     {
-        // Encuentra el ticket por ID
-        $ticket = Ticket::find($id);
+        try {
+            // Encuentra el ticket por ID
+            $ticket = Ticket::find($id);
     
-        // Verifica si el ticket existe
-        if (!$ticket) {
-            return response()->json(['message' => 'Ticket no encontrado'], 404);
-        }
-    
-        // Obtiene la función de cine asociada al ticket
-        $movieFunction = $ticket->movieFunction;
-    
-        // Verifica si la función de cine existe
-        if (!$movieFunction) {
-            return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
-        }
-    
-        // Obtén la sala (room) asociada a la función de cine
-        $room = $movieFunction->room; // Relación con Room debe estar definida en MovieFunction
-    
-        // Verifica si la sala existe
-        if (!$room) {
-            return response()->json(['message' => 'Sala no encontrada para esta función'], 404);
-        }
-    
-        // Decodifica los asientos de la sala (JSON serializado en la base de datos)
-        $seats = json_decode($room->seats, true); // Convierte el string JSON en un array asociativo
-    
-        // Verifica si los asientos existen y tienen el formato correcto
-        if (!$seats || !is_array($seats)) {
-            return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
-        }
-    
-        // Recupera los asientos ocupados por este ticket y los libera
-        foreach ($ticket->seat_number as $seat) {
-            // Si el asiento existe en el JSON, márcalo como false (desocupado)
-            if (array_key_exists($seat, $seats)) {
-                $seats[$seat] = false;
+            if (!$ticket) {
+                return response()->json(['message' => 'Ticket no encontrado'], 404);
             }
+    
+            // Obtén la función de cine asociada al ticket
+            $movieFunction = $ticket->movieFunction;
+    
+            if (!$movieFunction) {
+                return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
+            }
+    
+            // Obtén la sala (room) asociada a la función de cine
+            $room = $movieFunction->room;
+    
+            if (!$room) {
+                return response()->json(['message' => 'Sala no encontrada para esta función'], 404);
+            }
+    
+            // Decodifica los asientos
+            $seats = json_decode($room->seats, true);
+    
+            if (!$seats || !is_array($seats)) {
+                return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
+            }
+    
+            // Libera los asientos ocupados por este ticket
+            foreach ($ticket->seat_number as $seat) {
+                if (isset($seats[$seat])) {
+                    $seats[$seat] = false; // Marca como desocupado
+                }
+            }
+    
+            // Guarda los asientos actualizados
+            $room->seats = json_encode($seats);
+            $room->save();
+    
+            // Elimina el ticket
+            $ticket->delete();
+    
+            return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
+        } catch (\Exception $e) {
+            // Maneja cualquier excepción y devuelve un mensaje de error
+            return response()->json([
+                'message' => 'Ocurrió un error inesperado',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-    
-        // Convierte los asientos actualizados a JSON y guarda en la base de datos
-        $room->seats = json_encode($seats);
-        $room->save();
-    
-        // Elimina el ticket
-        $ticket->delete();
-    
-        // Retorna una respuesta de éxito
-        return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
     }
     
 
