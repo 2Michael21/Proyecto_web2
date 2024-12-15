@@ -25,5 +25,10 @@ class Ticket extends Model
     {
         return $this->belongsTo(MovieFunction::class);
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }
 
