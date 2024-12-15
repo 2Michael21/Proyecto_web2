@@ -186,8 +186,16 @@ class TicketController extends Controller
             return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
         }
     
-        // Decodifica los asientos de la función
-        $seats = json_decode($movieFunction->seats, true);
+        // Obtén la sala (room) asociada a la función de cine
+        $room = $movieFunction->room; // Asegúrate de que la relación está bien definida en el modelo
+    
+        // Verifica si la sala existe
+        if (!$room) {
+            return response()->json(['message' => 'Sala no encontrada para esta función'], 404);
+        }
+    
+        // Decodifica los asientos de la sala
+        $seats = json_decode($room->seats, true);
     
         // Verifica si los asientos existen
         if (!$seats) {
@@ -196,7 +204,7 @@ class TicketController extends Controller
     
         // Recupera los asientos ocupados por este ticket
         foreach ($ticket->seat_number as $seat) {
-            // Asegúrate de que el asiento está presente en los asientos de la función
+            // Asegúrate de que el asiento está presente en los asientos de la sala
             if (isset($seats[$seat])) {
                 // Marca el asiento como disponible (false)
                 $seats[$seat] = false;
@@ -204,8 +212,8 @@ class TicketController extends Controller
         }
     
         // Guarda los cambios en los asientos
-        $movieFunction->seats = json_encode($seats);
-        $movieFunction->save();
+        $room->seats = json_encode($seats);
+        $room->save();
     
         // Elimina el ticket
         $ticket->delete();
