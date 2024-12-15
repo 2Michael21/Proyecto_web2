@@ -168,7 +168,7 @@ class TicketController extends Controller
         return response()->json($ticket->load(['movieFunction.movie', 'movieFunction.room']));
     }
 
-// Dentro del controlador donde manipulas los asientos
+// Eliminar un ticket y liberar los asientos
 public function destroy($ticketId)
 {
     try {
@@ -178,10 +178,9 @@ public function destroy($ticketId)
         // Obtener la función de la película y la sala asociada
         $movieFunction = $ticket->movieFunction; // O como tengas relacionado el ticket con la función de película
         $room = $movieFunction->room; // Asumiendo que la sala está relacionada con la función
-        // Obtener los números de los asientos
-        $seatNumbers = explode(', ', $ticket->seat_number);
+
         // Verificar si 'seat_numbers' no es null ni vacío
-        $occupiedSeats = $ticket->seat_numbers;
+        $occupiedSeats = explode(', ', $ticket->seat_number); // Asumir que los números de asientos están en un string separado por coma
         if (!$occupiedSeats || !is_array($occupiedSeats)) {
             return response()->json(['error' => 'No se encontraron asientos ocupados en el ticket.'], 400);
         }
@@ -193,7 +192,7 @@ public function destroy($ticketId)
             return response()->json(['error' => 'No se encontraron datos de asientos en la sala.'], 400);
         }
 
-        // Marcar los asientos como libres
+        // Marcar los asientos como libres (false)
         foreach ($occupiedSeats as $seatNumber) {
             if (isset($seats[$seatNumber])) {
                 $seats[$seatNumber] = false;  // Marcar el asiento como libre
@@ -212,6 +211,7 @@ public function destroy($ticketId)
         return response()->json(['error' => 'Error al eliminar el ticket: ' . $e->getMessage()], 500);
     }
 }
+
 
 
     
