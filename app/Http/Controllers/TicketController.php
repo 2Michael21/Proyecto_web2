@@ -173,16 +173,15 @@ class TicketController extends Controller
         // Encuentra el ticket por ID
         $ticket = Ticket::find($id);
     
+        // Verifica si el ticket existe
         if (!$ticket) {
             return response()->json(['message' => 'Ticket no encontrado'], 404);
         }
     
-        // Depurar para ver si el ticket tiene una relación con la función
-        dd($ticket->function);
-    
-        // Obtén la función asociada al ticket
+        // Obtiene la función asociada al ticket (asumimos que el ticket tiene una relación con la función)
         $function = $ticket->function;
     
+        // Verifica si la función existe
         if (!$function) {
             return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
         }
@@ -190,18 +189,19 @@ class TicketController extends Controller
         // Decodifica los asientos de la función
         $seats = json_decode($function->seats, true);
     
+        // Verifica si los asientos existen
         if (!$seats) {
-            return response()->json(['message' => 'Los asientos de la función no están configurados correctamente'], 500);
+            return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
         }
     
-        // Cambia el estado de los asientos del ticket a `false`
+        // Marca los asientos del ticket como disponibles (false)
         foreach ($ticket->seats as $seat) {
             if (isset($seats[$seat])) {
-                $seats[$seat] = false;
+                $seats[$seat] = false; // Marcar el asiento como libre
             }
         }
     
-        // Guarda los cambios en la función
+        // Guarda los cambios en la función (actualiza los asientos)
         $function->seats = json_encode($seats);
         $function->save();
     
