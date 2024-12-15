@@ -178,7 +178,8 @@ public function destroy($ticketId)
         // Obtener la función de la película y la sala asociada
         $movieFunction = $ticket->movieFunction; // O como tengas relacionado el ticket con la función de película
         $room = $movieFunction->room; // Asumiendo que la sala está relacionada con la función
-
+        // Obtener los números de los asientos
+        $seatNumbers = explode(', ', $ticket->seat_number);
         // Verificar si 'seat_numbers' no es null ni vacío
         $occupiedSeats = $ticket->seat_numbers;
         if (!$occupiedSeats || !is_array($occupiedSeats)) {
