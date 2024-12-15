@@ -68,7 +68,7 @@ Route::prefix('tickets')->group(function () {
     // Rutas para clientes (usuarios)
     Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
         Route::post('/', [TicketController::class, 'store']);  // Comprar ticket (cliente)
-        Route::get('/user', [TicketController::class, 'ticketusuario']); // Mostrar tickets por nombre de usuario
+        Route::get('/user', [TicketController::class, 'showUserTickets']); // Mostrar tickets por nombre de usuario (Función necesaria en el controlador)
     });
 
     // Rutas para empleados
@@ -78,11 +78,12 @@ Route::prefix('tickets')->group(function () {
 
     // Rutas para administradores
     Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-        Route::get('/', [TicketController::class, 'index']);  // Administrar tickets (listado)
-        Route::delete('/{ticket}', [TicketController::class, 'destroy']);  // Eliminar ticket
+        Route::get('/', [TicketController::class, 'adminIndex']);  // Administrar tickets (listado)
+        Route::delete('/{ticketId}', [TicketController::class, 'destroy']);  // Eliminar ticket por ID
     });
 
 });
+
 
 
 

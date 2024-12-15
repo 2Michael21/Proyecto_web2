@@ -30,7 +30,12 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    // Mostrar un boleto específico
+    public function showUserTickets()
+    {
+        $tickets = Ticket::where('user_id', auth()->id())->with(['movieFunction.movie', 'movieFunction.room'])->get();
+        return response()->json($tickets);
+    }
+        // Mostrar un boleto específico
     public function show($id)
     {
         $ticket = Ticket::with('movieFunction')->find($id);
