@@ -192,15 +192,26 @@ class TicketController extends Controller
                 return response()->json(['message' => 'Sala no encontrada para esta función'], 404);
             }
     
-            // Decodifica los asientos
+            // Decodifica los asientos de la sala
             $seats = json_decode($room->seats, true);
     
             if (!$seats || !is_array($seats)) {
                 return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
             }
     
+            // Valida que seat_number sea un array
+            $seatNumbers = $ticket->seat_number;
+            if (!is_array($seatNumbers)) {
+                // Intenta decodificar si está almacenado como JSON
+                $seatNumbers = json_decode($seatNumbers, true);
+    
+                if (!$seatNumbers || !is_array($seatNumbers)) {
+                    return response()->json(['message' => 'Los asientos del ticket no están configurados correctamente'], 500);
+                }
+            }
+    
             // Libera los asientos ocupados por este ticket
-            foreach ($ticket->seat_number as $seat) {
+            foreach ($seatNumbers as $seat) {
                 if (isset($seats[$seat])) {
                     $seats[$seat] = false; // Marca como desocupado
                 }
