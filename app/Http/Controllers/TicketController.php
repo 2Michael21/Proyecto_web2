@@ -171,31 +171,14 @@ class TicketController extends Controller
     public function destroy($id)
     {
         try {
-                // Obtener el ticket
-            $ticket = Ticket::find($ticketId);
+            // Encuentra el ticket por ID
+            $ticket = Ticket::find($id);
+    
             if (!$ticket) {
                 return response()->json(['message' => 'Ticket no encontrado'], 404);
             }
-
-            // Obtener los asientos ocupados
-            $occupiedSeats = json_decode($ticket->seats, true);
-
-            // Obtener la sala correspondiente
-            $room = $ticket->movieFunction->room; // Suponiendo que cada ticket tiene una relación con MovieFunction y la sala
-
-            // Obtener los asientos de la sala
-            $seats = json_decode($room->seats, true);
-
-            // Restablecer los asientos a 'false' para los asientos ocupados
-            foreach ($occupiedSeats as $seat => $occupied) {
-                if (isset($seats[$seat]) && $occupied) {
-                    $seats[$seat] = false; // Desmarcar el asiento como desocupado
-                }
-            }
-
-            // Guardar los cambios en los asientos de la sala
-            $room->seats = json_encode($seats);
-            $room->save();
+    
+            // Elimina el ticket
             $ticket->delete();
     
             return response()->json(['message' => 'Ticket eliminado correctamente'], 200);
