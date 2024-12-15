@@ -18,6 +18,26 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
+    // Mostrar los tickets por nombre de usuario
+    public function getTicketsByUser(Request $request)
+    {
+        // Validar el nombre del usuario proporcionado
+        $validated = $request->validate([
+            'user_name' => 'required|string',
+        ]);
+
+        // Buscar los tickets asociados al nombre del usuario
+        $tickets = Ticket::whereHas('user', function ($query) use ($validated) {
+            $query->where('name', 'like', '%' . $validated['user_name'] . '%');
+        })->with(['movieFunction.movie', 'movieFunction.room'])->get();
+
+        if ($tickets->isEmpty()) {
+            return response()->json(['message' => 'No se encontraron tickets para el usuario especificado'], 404);
+        }
+
+        return response()->json($tickets);
+    }
+
     // Mostrar un boleto específico
     public function show($id)
     {

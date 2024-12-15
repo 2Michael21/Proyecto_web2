@@ -68,6 +68,7 @@ Route::prefix('tickets')->group(function () {
     // Rutas para clientes (usuarios)
     Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
         Route::post('/', [TicketController::class, 'store']);  // Comprar ticket (cliente)
+        Route::get('/user', [TicketController::class, 'getTicketsByUser']); // Mostrar tickets por nombre de usuario
     });
 
     // Rutas para empleados
