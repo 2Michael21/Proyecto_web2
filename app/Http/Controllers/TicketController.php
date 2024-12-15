@@ -178,6 +178,17 @@ class TicketController extends Controller
                 return response()->json(['message' => 'Ticket no encontrado'], 404);
             }
     
+            // Verifica si `seat_number` es un array
+            $seatNumbers = $ticket->seat_number;
+            if (!is_array($seatNumbers)) {
+                // Intenta decodificar si está almacenado como JSON
+                $seatNumbers = json_decode($seatNumbers, true);
+    
+                if (!$seatNumbers || !is_array($seatNumbers)) {
+                    return response()->json(['message' => 'Los asientos del ticket no están configurados correctamente'], 500);
+                }
+            }
+    
             // Obtén la función de cine asociada al ticket
             $movieFunction = $ticket->movieFunction;
     
@@ -196,18 +207,7 @@ class TicketController extends Controller
             $seats = json_decode($room->seats, true);
     
             if (!$seats || !is_array($seats)) {
-                return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
-            }
-    
-            // Valida que seat_number sea un array
-            $seatNumbers = $ticket->seat_number;
-            if (!is_array($seatNumbers)) {
-                // Intenta decodificar si está almacenado como JSON
-                $seatNumbers = json_decode($seatNumbers, true);
-    
-                if (!$seatNumbers || !is_array($seatNumbers)) {
-                    return response()->json(['message' => 'Los asientos del ticket no están configurados correctamente'], 500);
-                }
+                return response()->json(['message' => 'Los asientos de la sala no están configurados correctamente'], 500);
             }
     
             // Libera los asientos ocupados por este ticket
