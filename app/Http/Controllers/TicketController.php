@@ -178,36 +178,39 @@ class TicketController extends Controller
             return response()->json(['message' => 'Ticket no encontrado'], 404);
         }
     
-        // Obtiene la función asociada al ticket (asumimos que el ticket tiene una relación con la función)
-        $function = $ticket->function;
+        // Obtiene la función de cine asociada al ticket
+        $movieFunction = $ticket->movieFunction;
     
-        // Verifica si la función existe
-        if (!$function) {
+        // Verifica si la función de cine existe
+        if (!$movieFunction) {
             return response()->json(['message' => 'Función no encontrada para este ticket'], 404);
         }
     
         // Decodifica los asientos de la función
-        $seats = json_decode($function->seats, true);
+        $seats = json_decode($movieFunction->seats, true);
     
         // Verifica si los asientos existen
         if (!$seats) {
             return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
         }
     
-        // Marca los asientos del ticket como disponibles (false)
-        foreach ($ticket->seats as $seat) {
+        // Recupera los asientos ocupados por este ticket
+        foreach ($ticket->seat_number as $seat) {
+            // Asegúrate de que el asiento está presente en los asientos de la función
             if (isset($seats[$seat])) {
-                $seats[$seat] = false; // Marcar el asiento como libre
+                // Marca el asiento como disponible (false)
+                $seats[$seat] = false;
             }
         }
     
-        // Guarda los cambios en la función (actualiza los asientos)
-        $function->seats = json_encode($seats);
-        $function->save();
+        // Guarda los cambios en los asientos
+        $movieFunction->seats = json_encode($seats);
+        $movieFunction->save();
     
         // Elimina el ticket
         $ticket->delete();
     
+        // Retorna respuesta confirmando que se eliminó el ticket y los asientos se actualizaron
         return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
     }
     
