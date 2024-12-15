@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\MovieFunction;
 use App\Models\Movie;
+use App\Models\Room;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class MovieFunctionController extends Controller
 {
@@ -54,6 +54,9 @@ class MovieFunctionController extends Controller
             $movie->backdrop_full_path = $this->getBackdropUrl($movie);
         }
 
+        // Incluir los asientos de la función específica
+        $function->seats = json_decode($function->seats, true);
+
         return response()->json($function);
     }
 
@@ -79,8 +82,17 @@ class MovieFunctionController extends Controller
             'end_time' => 'required|date|after:start_time', // Hora de finalización
         ]);
 
+        // Obtener la sala y calcular la cantidad de asientos disponibles
+        $room = Room::find($validated['room_id']);
+        $seats = [];
+        foreach ($room->seats as $seat) {
+            $seats[$seat] = false;  // Asiento no ocupado (false)
+        }
+
         // Crear la nueva función de la película en la sala
-        $function = MovieFunction::create($validated);
+        $function = MovieFunction::create(array_merge($validated, [
+            'seats' => json_encode($seats),  // Almacenar los asientos como JSON
+        ]));
 
         return response()->json($function->load(['movie', 'room']), 201);
     }
@@ -130,5 +142,34 @@ class MovieFunctionController extends Controller
         $function->delete();
 
         return response()->json(['message' => 'Funcion de la película eliminada']);
+    }
+
+    // Actualizar los asientos para una función específica
+    public function updateSeats(Request $request, $functionId)
+    {
+        $validated = $request->validate([
+            'seat_numbers' => 'required|array',
+        ]);
+
+        $function = MovieFunction::find($functionId);
+        if (!$function) {
+            return response()->json(['message' => 'Funcion de la película no encontrada'], 404);
+        }
+
+        // Obtener los asientos actuales de la función
+        $seats = json_decode($function->seats, true);
+
+        // Actualizar los asientos seleccionados
+        foreach ($validated['seat_numbers'] as $seatNumber) {
+            if (isset($seats[$seatNumber])) {
+                $seats[$seatNumber] = true;  // Marcar como ocupado (true)
+            }
+        }
+
+        // Guardar los cambios en la base de datos
+        $function->seats = json_encode($seats);
+        $function->save();
+
+        return response()->json($function);
     }
 }
