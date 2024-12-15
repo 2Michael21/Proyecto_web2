@@ -169,44 +169,39 @@ class TicketController extends Controller
     }
 
 // Dentro del controlador donde manipulas los asientos
-public function destroy($id)
+public function destroy($ticketId)
 {
     try {
         // Obtener el ticket a eliminar
-        $ticket = Ticket::find($id);
-        if (!$ticket) {
-            return response()->json(['message' => 'Ticket no encontrado'], 404);
-        }
+        $ticket = Ticket::findOrFail($ticketId);
 
-        // Obtener la sala correspondiente a la función de la película
-        $room = $ticket->movieFunction->room; // Asumiendo que el ticket tiene la relación con MovieFunction y Room
+        // Obtener la función de la película y la sala asociada
+        $movieFunction = $ticket->movieFunction; // O como tengas relacionado el ticket con la función de película
+        $room = $movieFunction->room; // Asumiendo que la sala está relacionada con la función
 
-        // Obtener los asientos ocupados (en formato array)
-        $seats = $room->seats ?? []; // Usar el valor del campo 'seats' o un array vacío si no está definido
+        // Obtener los asientos ocupados en el ticket
+        $occupiedSeats = $ticket->seat_numbers; // O como tengas relacionado los asientos en el ticket
 
-        // Obtener los números de asientos ocupados por este ticket
-        $seatNumbers = explode(', ', $ticket->seat_number); // Los asientos están separados por coma en el ticket
+        // Decodificar los asientos de la sala
+        $seats = json_decode($room->seats, true);
 
-        // Restaurar los asientos a 'false' (libres)
-        foreach ($seatNumbers as $seatNumber) {
+        // Marcar los asientos como libres
+        foreach ($occupiedSeats as $seatNumber) {
             if (isset($seats[$seatNumber])) {
-                $seats[$seatNumber] = false; // Marcar el asiento como libre
+                $seats[$seatNumber] = false;  // Marcar el asiento como libre
             }
         }
 
-        // Guardar los cambios en la base de datos
-        $room->seats = $seats; // Aquí se guardará como un array, Laravel lo convertirá a JSON automáticamente
-        $room->save();
+        // Volver a codificar los asientos y guardar la actualización
+        $room->seats = json_encode($seats);
+        $room->save();  // Guardar la sala con los asientos actualizados
 
         // Eliminar el ticket
         $ticket->delete();
 
-        return response()->json(['message' => 'Ticket eliminado correctamente, los asientos han sido liberados.'], 200);
+        return response()->json(['message' => 'Ticket y asientos eliminados con éxito.']);
     } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Ocurrió un error inesperado',
-            'error' => $e->getMessage(),
-        ], 500);
+        return response()->json(['error' => 'Error al eliminar el ticket: ' . $e->getMessage()], 500);
     }
 }
 
