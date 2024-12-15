@@ -187,26 +187,25 @@ class TicketController extends Controller
         }
     
         // Obtén la sala (room) asociada a la función de cine
-        $room = $movieFunction->room; // Asegúrate de que esta relación esté definida en el modelo MovieFunction
+        $room = $movieFunction->room; // Relación con Room debe estar definida en MovieFunction
     
         // Verifica si la sala existe
         if (!$room) {
             return response()->json(['message' => 'Sala no encontrada para esta función'], 404);
         }
     
-        // Decodifica los asientos (JSON serializado)
-        $seats = json_decode($room->seats, true); // Decodifica el string JSON a un array asociativo
+        // Decodifica los asientos de la sala (JSON serializado en la base de datos)
+        $seats = json_decode($room->seats, true); // Convierte el string JSON en un array asociativo
     
         // Verifica si los asientos existen y tienen el formato correcto
         if (!$seats || !is_array($seats)) {
             return response()->json(['message' => 'Los asientos no están configurados correctamente'], 500);
         }
     
-        // Recupera los asientos ocupados por este ticket
+        // Recupera los asientos ocupados por este ticket y los libera
         foreach ($ticket->seat_number as $seat) {
-            // Asegúrate de que el asiento está presente en los asientos de la sala
-            if (isset($seats[$seat])) {
-                // Marca el asiento como disponible (false)
+            // Si el asiento existe en el JSON, márcalo como false (desocupado)
+            if (array_key_exists($seat, $seats)) {
                 $seats[$seat] = false;
             }
         }
@@ -218,7 +217,7 @@ class TicketController extends Controller
         // Elimina el ticket
         $ticket->delete();
     
-        // Retorna respuesta confirmando que se eliminó el ticket y los asientos se actualizaron
+        // Retorna una respuesta de éxito
         return response()->json(['message' => 'Ticket eliminado y asientos actualizados correctamente']);
     }
     
