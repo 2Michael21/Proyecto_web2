@@ -75,14 +75,18 @@ class TicketController extends Controller
                 'ticket_code' => $ticketCode,
             ]);
     
-            // Actualizar los asientos de la sala como ocupados
+            // Verificar si 'seats' es un array antes de acceder
+            $seats = $room->seats ? json_decode($room->seats, true) : []; // Convertir a array si no es un array
+    
             foreach ($validated['seat_numbers'] as $seatNumber) {
-                // Verificar si 'seats' ya es un array, y si lo es, omitir json_decode
-                $room->seats[$seatNumber] = true;  // Marcar el asiento como ocupado
+                if (isset($seats[$seatNumber])) {
+                    $seats[$seatNumber] = true;  // Marcar el asiento como ocupado
+                }
             }
     
-            // Guardar los cambios en los asientos de la sala
-            $room->save();
+            // Asignar los cambios de vuelta al atributo 'seats'
+            $room->seats = json_encode($seats);  // Volver a convertirlo a JSON
+            $room->save();  // Guardar los cambios en la base de datos
     
             // Confirmar la transacción
             DB::commit();
