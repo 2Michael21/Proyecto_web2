@@ -168,28 +168,48 @@ class TicketController extends Controller
         return response()->json($ticket->load(['movieFunction.movie', 'movieFunction.room']));
     }
 
-    public function destroy($id)
-    {
-        try {
-            // Encuentra el ticket por ID
-            $ticket = Ticket::find($id);
-    
-            if (!$ticket) {
-                return response()->json(['message' => 'Ticket no encontrado'], 404);
-            }
-    
-            // Elimina el ticket
-            $ticket->delete();
-    
-            return response()->json(['message' => 'Ticket eliminado correctamente'], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Ocurrió un error inesperado',
-                'error' => $e->getMessage(),
-            ], 500);
+// Dentro del controlador donde manipulas los asientos
+public function destroy($id)
+{
+    try {
+        // Obtener el ticket a eliminar
+        $ticket = Ticket::find($id);
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket no encontrado'], 404);
         }
+
+        // Obtener la sala correspondiente a la función de la película
+        $room = $ticket->movieFunction->room; // Asumiendo que el ticket tiene la relación con MovieFunction y Room
+
+        // Obtener los asientos ocupados (en formato array)
+        $seats = $room->seats ?? []; // Usar el valor del campo 'seats' o un array vacío si no está definido
+
+        // Obtener los números de asientos ocupados por este ticket
+        $seatNumbers = explode(', ', $ticket->seat_number); // Los asientos están separados por coma en el ticket
+
+        // Restaurar los asientos a 'false' (libres)
+        foreach ($seatNumbers as $seatNumber) {
+            if (isset($seats[$seatNumber])) {
+                $seats[$seatNumber] = false; // Marcar el asiento como libre
+            }
+        }
+
+        // Guardar los cambios en la base de datos
+        $room->seats = $seats; // Aquí se guardará como un array, Laravel lo convertirá a JSON automáticamente
+        $room->save();
+
+        // Eliminar el ticket
+        $ticket->delete();
+
+        return response()->json(['message' => 'Ticket eliminado correctamente, los asientos han sido liberados.'], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Ocurrió un error inesperado',
+            'error' => $e->getMessage(),
+        ], 500);
     }
-    
+}
+
 
     
     // Liberar los asientos de una función de película (cuando la película termine)
